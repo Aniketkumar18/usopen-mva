@@ -1,0 +1,326 @@
+---
+title: "Project"
+author: "Aniket ,Anusha & Shafia"
+date: "11/27/2019"
+output: word_document
+---
+
+```{r}
+#load the datasets
+
+men<- read.csv("US-Open-Men.csv")
+
+women<-read.csv("US-Open-Women.csv")
+```
+
+```{r}
+
+# concentrating on the columns which are common in both the data sets
+
+men$TPW.1<-NULL
+men$ST3.1<- NULL
+women$WNR.1 <- NULL
+women$UFE.1<-NULL
+women$NPA.1 <- NULL
+women$NPW.1 <-NULL
+
+```
+
+```{r}
+
+# renaming the columns
+names(men)[4]<- "FNL.1"
+
+names(men)[3]<-"Result"
+
+names(men)[1]<-"Name"
+
+names(women)[1]<-"Name"
+
+```
+
+
+
+```{r}
+
+#combining both the dataframes
+Total<-rbind(men, women)
+
+Total
+```
+
+
+
+```{r}
+library(dplyr)
+
+Total_wins<-Total %>%
+   group_by(Name) %>%
+    summarise(Total_wins = sum(Result, na.rm=TRUE))
+
+Total_wins
+```
+
+
+```{r}
+
+Means<- Total %>%
+   group_by(Name) %>%
+    summarise_each(funs(mean))
+
+Means$Result<- NULL
+Means$FNL.1<- NULL
+
+Means
+```
+
+```{r}
+
+
+merged<- merge(Total_wins, Means,by='Name')
+
+rownames(merged)<- merged$Name
+
+merged$Name<- NULL
+
+merged
+```
+
+```{r}
+library(corrplot)
+# non text column for correlartion
+USOpen_data_2= merged[, c(2,3,4,5,6,7,8,9,10,11,12)]
+
+head(USOpen_data_2)
+
+corr_USOpen_data= cor(USOpen_data_2)
+
+corrplot.mixed(corr_USOpen_data, upper="color",tl.cex=1, cl.cex = 0.7, number.cex = 0.7, lower.col = "black", diag= "u", tl.pos="lt")
+
+```
+
+
+```{r}
+#install.packages("ggplot2")
+#install.packages("GGally")
+library(ggplot2)
+library(GGally)
+
+panel.cor <- function(x, y){
+    usr <- par("usr"); on.exit(par(usr))
+    par(usr = c(0, 1, 0, 1))
+    r <- round(cor(x, y), digits=2)
+    txt <- paste0("R = ", r)
+    cex.cor <- 0.8/strwidth(txt)
+    text(0.5, 0.5, txt, cex = cex.cor * r)
+}
+# Customize upper panel
+upper.panel<-function(x, y){
+  points(x,y, pch = 1, col = c("red","blue")[merged$Gender])
+}
+# Create the plots
+pairs(merged[,3:12], 
+      lower.panel = panel.cor,
+      upper.panel = upper.panel)
+```
+
+
+```{r}
+#install.packages("psych")
+library(psych)
+pairs.panels(merged[(merged[,2]==0),3:12], 
+             method = "pearson", 
+             hist.col = "#FC4E07",
+             density = TRUE, 
+             ellipses = FALSE, 
+             cex.cor = 0.6,
+             stars = TRUE,
+             pch=1, 
+             main= "Scatter plot mix for women tennis players"
+             )
+```
+
+
+```{r}
+
+pairs.panels(merged[(merged[,2]==1),3:12], 
+             method = "pearson", # correlation method
+             hist.col = "#00AFBB",
+             density = TRUE,  # show density plots
+             ellipses = FALSE, 
+             cex.cor = 0.6,
+             stars = TRUE,
+             pch=1,
+             main= "Scatter plot mix for men tennis players"
+             )
+
+```
+
+
+
+```{r}
+#install.packages("MVA")
+#install.packages("HSAUR2")
+#install.packages('plotly')
+library(plotly)
+library(HSAUR2)
+library(MVA)
+
+
+subset_stats_1 = merged[(merged[, 2]==0), c("Total_wins", "FSP.1")]
+bvbox(subset_stats_1, xlab= "number of wins by players",ylab= "First serve points", main="Bivariate box plot of men tennis" )
+text(subset_stats_1, labels= rownames(merged), cex=0.6)
+
+subset_stats_1 = merged[(merged[, 2]==1), c("Total_wins", "FSP.1")]
+bvbox(subset_stats_1, xlab= "number of wins by players",ylab= "First serve points", main="Bivariate box plot of women tennis")
+text(subset_stats_1, labels= rownames(merged), cex=0.6)
+
+```
+```{r}
+subset_stats_2 = merged[(merged[, 2]==0), c("Total_wins", "SSW.1")]
+bvbox(subset_stats_2, xlab= "number of wins by players",ylab= "Lost first serve points", pch=" ", main="Bivariate box plot of men tennis" )
+text(subset_stats_2, labels= rownames(merged), cex=0.6)
+
+subset_stats_2 = merged[(merged[, 2]==1), c("Total_wins", "SSW.1")]
+bvbox(subset_stats_2, xlab= "number of wins by players",ylab= "Lost first serve points", pch=" ", main="Bivariate box plot of women tennis" )
+text(subset_stats_2, labels= rownames(merged), cex=0.6)
+
+```
+
+
+```{r}
+subset_stats_3 = merged[(merged[,2]==0), c("Total_wins", "ACE.1")]
+bvbox(subset_stats_3, xlab= "number of wins by players",ylab= "Aces won",         main="Bivariate box plot of women tennis")
+text(subset_stats_3, labels= rownames(merged), cex=0.7,pch="19")
+
+
+subset_stats_3 = merged[(merged[,2]==1), c("Total_wins", "ACE.1")]
+bvbox(subset_stats_3, xlab= "number of wins by players",ylab= "Aces won", 
+      main ="Bivariate box plot of men tennis")
+text(subset_stats_3, labels= rownames(merged), cex=0.7,pch="19" )
+
+```
+
+```{r}
+subset_stats_4 = merged[(merged[, 2]==0), c("BPC.1", "BPW.1")]
+bvbox(subset_stats_4, xlab= "break points created",ylab= "Break points won", pch=" ")
+text(subset_stats_4, labels= rownames(merged), cex=0.5)
+
+```
+```{r}
+#install.packages("scatterplot3d")
+#install.packages("plot3D")
+library(scatterplot3d)
+library(plot3D)
+
+
+
+men_top_10= c("Rafael Nadal","Novak Djokovic", "David Ferrer", "Andy Murray", 
+"Juan Martin Del Potro", "Tomas Berdych","Roger Federer", "Stanislas Wawrinka", "Richard Gasquet", "Milos Raonic")
+
+players_men= merged[men_top_10, c(3,5,7)]
+with (players_men, {
+    s3d <- scatter3D(FSP.1, SSP.1, ACE.1,      
+                  color="blue", pch=20,bty="g",scale.y=.75,                
+                  xlab="First Serve Point",
+                  ylab="Second Serve Serve Point",
+                  zlab="Ace Serve Point", phi=20, theta=30,ticktype= "detailed",
+                  main ="Top Ten Men tennis players")
+    text3D(FSP.1, SSP.1, ACE.1,    
+          labels=row.names(players_men), phi=0, theta=30,    
+          pos=4, cex=.5, add= TRUE)
+})
+
+
+
+```
+```{r}
+
+
+women_top_10= c("S Williams","V Azarenka","A.Radwanska", "N Li","P Kvitova","S Errani", "J Jankovic", "A Kerber", "C Wozniacki", "S Stephens")
+
+players_women= merged[women_top_10, c(3,5,7)]
+with (players_women, {
+    s3d <- scatter3D(FSP.1, SSP.1, ACE.1,      
+                  color="blue", pch=20,bty="g",scale.y=.75,                
+                  xlab="First Serve Point",
+                  ylab="Second Serve Serve Point",
+                  zlab="Ace Serve Point", phi=20, theta=30,ticktype= "detailed",
+                  main ="Top Ten Women tennis players")
+    text3D(FSP.1, SSP.1, ACE.1,    
+          labels=row.names(players_women), phi=0, theta=30,    
+          pos=4, cex=.6, add= TRUE)
+})
+
+
+
+
+```
+
+
+
+
+
+```{r}
+plot.wgss = function(mydata, maxc) {
+  wss = numeric(maxc)
+  for (i in 1:maxc) 
+    wss[i] = kmeans(mydata, centers=i, nstart = 10)$tot.withinss 
+  plot(1:maxc, wss, type="b", xlab="Number of Clusters",
+  ylab="Within groups sum of squares", main="Scree Plot") 
+}
+
+plot.wgss(merged.s, 20)
+
+```
+
+
+```{r}
+
+merged.s<-scale(merged[,3:12])
+
+km<-kmeans(merged.s,centers=2)
+
+table(km$cluster, merged$Gender)
+
+```
+
+```{r}
+
+plot(merged[,4], col=km$cluster)
+```
+
+```{r}
+pc<-princomp(merged , cor= T)
+
+summary(pc, loadings= T)
+```
+
+
+
+```{r}
+merged.fa<-factanal(merged.s, factors=3, lower=0.01)
+merged.fa
+```
+
+
+```{r}
+library(sem)
+
+specifyModel(
+  
+  text="
+  
+  
+  "
+  
+  
+)
+```
+
+```{r}
+library(lavaan)
+
+model <- '
+```
+
